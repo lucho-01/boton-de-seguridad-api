@@ -1,0 +1,20 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "contacto_confianza",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "updated_at", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "alerta",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "updated_at", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "alerta",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "creada_en", "order": "DESCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -5,6 +5,7 @@ out/
 build/
 coverage/
 *.tsbuildinfo
+next-env.d.ts
 
 # Secretos y datos locales (el guard también los bloquea)
 .env

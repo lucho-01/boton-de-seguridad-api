@@ -4,7 +4,7 @@ Organización **por feature** (FDD): el código se agrupa por lo que la API hace
 
 ## Mapa del proyecto
 
-Todo el código vive en `app/` (no hay `src/`). **Las carpetas de features todavía no existen**: se crean al construir cada una; por ahora solo está la configuración de IA y el andamiaje de calidad.
+Todo el código vive en `app/` (no hay `src/`). El andamiaje de la API existe desde A0 (`docs/specs/a0-base.md`); las carpetas de cada feature se crean al construirla.
 
 ```text
 app/
