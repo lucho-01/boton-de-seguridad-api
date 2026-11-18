@@ -128,6 +128,17 @@ function clasificar(valor: string | undefined): EstadoVariable {
   return "presente";
 }
 
+/** Nombres de los campos con formato inválido; vacío si todos encajan. */
+export function camposInvalidos(entrada: Record<string, string | undefined>): string[] {
+  const leido = EntornoSchema.safeParse(entrada);
+  if (leido.success) {
+    return [];
+  }
+  return leido.error.issues.map((problema) => {
+    return problema.path.map(String).join(".");
+  });
+}
+
 /** Valida un entorno leído; lanza `ErrorDeConfiguracion` nombrando lo que falta. */
 export function validarEntorno(entrada: Record<string, string | undefined>): Entorno {
   const evaluacion = evaluarEntorno(entrada);
@@ -136,23 +147,21 @@ export function validarEntorno(entrada: Record<string, string | undefined>): Ent
       `${MENSAJE_VALIDACION}: obligatorias sin valor → ${evaluacion.faltantes.join(", ")}`,
     );
   }
-  const leido = EntornoSchema.safeParse(entrada);
-  if (!leido.success) {
-    const campos = leido.error.issues.map((problema) => {
-      return problema.path.map(String).join(".");
-    });
+  const campos = camposInvalidos(entrada);
+  if (campos.length > 0) {
     throw new ErrorDeConfiguracion(`${MENSAJE_VALIDACION}: revisa ${campos.join(", ")}`);
   }
-  const origenes = leido.data.CORS_ORIGINS;
+  const leido = EntornoSchema.parse(entrada);
+  const origenes = leido.CORS_ORIGINS;
   let lista: string[] = [];
   if (origenes !== undefined) {
     lista = interpretarOrigenes(origenes);
   }
   return {
-    FIREBASE_PROJECT_ID: leido.data.FIREBASE_PROJECT_ID,
-    FIREBASE_CLIENT_EMAIL: leido.data.FIREBASE_CLIENT_EMAIL,
-    FIREBASE_PRIVATE_KEY: normalizarClavePrivada(leido.data.FIREBASE_PRIVATE_KEY),
-    FIREBASE_WEB_API_KEY: leido.data.FIREBASE_WEB_API_KEY,
+    FIREBASE_PROJECT_ID: leido.FIREBASE_PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL: leido.FIREBASE_CLIENT_EMAIL,
+    FIREBASE_PRIVATE_KEY: normalizarClavePrivada(leido.FIREBASE_PRIVATE_KEY),
+    FIREBASE_WEB_API_KEY: leido.FIREBASE_WEB_API_KEY,
     CORS_ORIGINS: lista,
   };
 }
