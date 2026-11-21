@@ -1,23 +1,21 @@
 /**
  * Reglas de seguridad que aplica el guard de OpenCode antes de ejecutar una herramienta.
  *
- * Qué bloquea:
- *  - archivos y carpetas secretos (`.env*` salvo `.env.example`, `secrets/`, `data/`, claves);
- *  - cualquier ruta fuera de la carpeta del proyecto (incluye `..`, rutas absolutas y `~`);
- *  - comandos con efecto externo o destructivo (git push, vercel, firebase deploy, curl, rm -rf…);
+ * Bloquea:
+ *  - secretos: `.env*` (salvo `.env.example`), `secrets/`, `data/`, keystores, claves,
+ *    `google-services.json`, `GoogleService-Info.plist`, `credentials.json` de EAS;
+ *  - rutas fuera del proyecto (incluye `..`, absolutas y `~`);
+ *  - comandos con efecto externo o destructivo (git push, eas build, expo publish, curl…);
  *  - volcados de variables de entorno (printenv, env, Get-ChildItem env:).
  *
- * Es una barrera de buena fe y defensa en profundidad, no un sandbox: los permisos de
- * `opencode.json` son la primera capa y esta es la segunda.
+ * Es defensa en profundidad, no un sandbox: los permisos de `opencode.json` son la primera capa.
  */
 import { existsSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 
-/** Campo de texto opcional; si llega con otro tipo se ignora. */
 const optionalText = z.string().optional().catch(undefined);
 
-/** Argumentos que inspecciona el guard. Los nombres son los que usan los harness. */
 export const ToolArgsSchema = z.looseObject({
   command: optionalText,
   filePath: optionalText,
@@ -31,42 +29,47 @@ export const ToolArgsSchema = z.looseObject({
 });
 export type ToolArgs = z.infer<typeof ToolArgsSchema>;
 
-/** Nombres de campo que sugieren una ruta o un patrón. */
 const PATH_LIKE_KEY = /path|file|dir|glob|pattern|include|cwd/i;
-
-/** Herramientas de shell (cada harness las llama distinto). */
 const SHELL_TOOLS: readonly string[] = ["bash", "shell"];
 
-/** Carpetas prohibidas, relativas a la raíz del proyecto. */
 export const FORBIDDEN_DIRS = ["secrets/", "data/"] as const;
 
-/** Archivos prohibidos por nombre base. */
 export const FORBIDDEN_FILE_PATTERNS = [
   /^\.env(\..+)?$/i,
-  /\.(pem|key|p12|jks|keystore)$/i,
-  /^service[-_]?account.*\.json$/i,
+  /\.(pem|key|p12|jks|keystore|mobileprovision)$/i,
+  /^google-services\.json$/i,
+  /^GoogleService-Info\.plist$/i,
+  /^credentials\.json$/i,
+  /^.*service[-_]?account.*\.json$/i,
   /^firebase-adminsdk.*\.json$/i,
+  /\.(apk|aab|ipa)$/i,
 ] as const;
 
-/** Excepciones: este archivo se puede leer (no contiene valores). */
 export const ALLOWED_EXCEPTIONS = [".env.example"] as const;
 
-/** Comandos con efecto fuera de la máquina o destructivos. */
 export const DENIED_COMMANDS: readonly { pattern: RegExp; motivo: string }[] = [
   { pattern: /\bgit\s+push\b/i, motivo: "git push" },
-  { pattern: /\bgit\s+remote\s+(add|set-url|remove)\b/i, motivo: "cambiar remotos de git" },
   {
-    pattern: /\b(vercel|firebase|eas|expo)\b[^\n]*\b(deploy|build|update|publish|release)\b/i,
-    motivo: "despliegue o publicación",
+    pattern: /\bgit\s+remote\s+(add|set-url|remove)\b/i,
+    motivo: "cambiar remotos de git",
+  },
+  { pattern: /\beas\s+(build|submit|update|whoami)\b/i, motivo: "CLI de EAS" },
+  {
+    pattern: /\bexpo\s+(publish|build|submit|update)\b/i,
+    motivo: "publicación de Expo",
   },
   { pattern: /\bvercel\b/i, motivo: "CLI de Vercel" },
+  { pattern: /\bfirebase\b/i, motivo: "CLI de Firebase" },
   { pattern: /\b(npm|pnpm|yarn)\s+publish\b/i, motivo: "publicar un paquete" },
   {
     pattern: /\b(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b/i,
     motivo: "descarga o petición externa",
   },
   { pattern: /\b(ssh|scp|sftp)\b/i, motivo: "conexión remota" },
-  { pattern: /\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r/i, motivo: "borrado recursivo" },
+  {
+    pattern: /\brm\s+-[a-z]*r[a-z]*f|\brm\s+-[a-z]*f[a-z]*r/i,
+    motivo: "borrado recursivo",
+  },
   { pattern: /\bRemove-Item\b[^\n]*-Recurse\b/i, motivo: "borrado recursivo" },
   { pattern: /\bprintenv\b/i, motivo: "volcado de variables de entorno" },
   { pattern: /^\s*env\s*$/i, motivo: "volcado de variables de entorno" },
@@ -88,7 +91,6 @@ function realpathOrSelf(p: string): string {
   }
 }
 
-/** Resuelve una ruta contra la raíz y dice si queda fuera del proyecto. */
 function relativeToRoot(p: string, root: string): { rel: string; outside: boolean } | null {
   if (!p || p.includes("\0")) {
     return null;
@@ -123,7 +125,6 @@ export function isOutsideRoot(p: string, root: string): boolean {
   return info.outside;
 }
 
-/** ¿La ruta cae en una zona prohibida? */
 export function isForbiddenPath(p: string, root: string): boolean {
   const info = relativeToRoot(p, root);
   if (info === null || info.outside) {
@@ -134,10 +135,8 @@ export function isForbiddenPath(p: string, root: string): boolean {
   if ((ALLOWED_EXCEPTIONS as readonly string[]).includes(base)) {
     return false;
   }
-  const inForbiddenDir = FORBIDDEN_DIRS.some(
-    (dir) => info.rel === dir.slice(0, -1) || info.rel.startsWith(dir),
-  );
-  if (inForbiddenDir) {
+  const dentro = segments.join("/");
+  if (FORBIDDEN_DIRS.some((dir) => dentro === dir.slice(0, -1) || dentro.startsWith(dir))) {
     return true;
   }
   return segments.some(
@@ -147,7 +146,6 @@ export function isForbiddenPath(p: string, root: string): boolean {
   );
 }
 
-/** Trozos de una línea de shell que podrían ser rutas (mejor esfuerzo). */
 export function shellTokens(command: string): string[] {
   return command
     .split(/[\s;|&<>()`'"]+/)
@@ -169,7 +167,6 @@ function denyForbidden(value: string): string {
   );
 }
 
-/** Convierte un patrón glob en su parte literal, sin comodines. */
 function toLiteral(value: string): string {
   const withoutMagic = value.replace(/\*+/g, "").replace(/\?+/g, "");
   const collapsed = withoutMagic.replace(/\/{2,}/g, "/");
@@ -191,7 +188,6 @@ function checkPath(value: string, root: string): string | null {
   return null;
 }
 
-/** Devuelve el motivo del bloqueo, o `null` si la llamada puede continuar. */
 export function checkToolCall(tool: string, args: ToolArgs, root: string): string | null {
   const name = tool.toLowerCase();
   const command = args.command ?? "";
@@ -223,7 +219,6 @@ export function checkToolCall(tool: string, args: ToolArgs, root: string): strin
   return null;
 }
 
-/** Textos de los argumentos que pueden ser una ruta o un patrón. */
 function pathCandidates(args: ToolArgs): string[] {
   const found: string[] = [];
   for (const [key, value] of Object.entries(args)) {

@@ -1,12 +1,14 @@
 # 36 · Botón de seguridad — API
 
-API REST del proyecto **36 · Botón de seguridad con contactos de confianza** (curso de Tendencias). Next.js (App Router) + Firebase Admin + Zod + Vitest, desplegada en Vercel. La app móvil (Expo) vive en otro repositorio.
+API REST del proyecto **36 · Botón de seguridad con contactos de confianza** (curso de Tendencias). Next.js (App Router) + Firebase Admin + Zod + Vitest, preparada para desplegarse en Vercel. La app móvil (Expo) vive en otro repositorio.
 
 > La API **no envía SMS ni llamadas**: autentica, guarda contactos, registra alertas y sincroniza. El SMS lo abre la app en el teléfono.
 
 ## Estado
 
-Configuración de IA montada y versionable: agentes, skills, guard, permisos, documentación del proyecto y evidencias en `ia/`. **El código de la API todavía no existe**: se agrega al construir **A0** (ver `docs/features.md` y `docs/progreso.md`).
+La API implementa A0–A6: autenticación con Firebase Auth, contactos, alertas, borrado de cuenta, diagnóstico de administración y límite de intentos de login. Incluye Route Handlers, servicios, repositorios Firestore y pruebas. La app móvil vive en otro repositorio.
+
+La integración está configurada en código, pero su conexión con un proyecto Firebase y el despliegue en Vercel deben verificarse con las variables y recursos reales. Consulta `docs/progreso.md` para los pendientes operativos.
 
 ## Empezar
 
@@ -28,8 +30,10 @@ Sigue `docs/empezar.md` para Firebase, el archivo `.env` (lo crea la persona, no
 | `npm run lint` | ESLint: reglas, `any`/`unknown`, ternarios y fronteras |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format` | Formato con Biome |
-
-Cuando se construya A0 se añaden `npm run dev`, `npm run build` y `npm run check:full`.
+| `npm run dev` | Servidor local de Next.js |
+| `npm run build` | Compilación de producción |
+| `npm run check:full` | `check` más compilación de producción |
+| `npm run check:env` | Comprueba la configuración sin imprimir valores |
 
 ## Documentación
 
@@ -76,7 +80,7 @@ Demostración en vivo: `ia/pruebas/restricciones-en-vivo.md`.
 ## Estructura
 
 ```text
-app/api/            Route Handlers (HTTP) — se crean con A0
+app/api/            Route Handlers HTTP de autenticación, contactos, alertas y cuenta
 app/features/       accounts, contacts, alerts (schema, server, tests) + container.ts
 app/shared/         contrato común y server (errores, entorno, Firebase)
 docs/               producto, features, arquitectura, specs, ADR, handoffs

@@ -11,8 +11,8 @@ Lo mantiene el orquestador: se actualiza al cerrar cada feature (spec aprobada �
 - **Construido:** A3 (alertas y resumen mensual): sincronización, ubicación opcional, cota de `creada_en` y resumen en hora de Colombia. Revisión de seguridad **Aprobada con correcciones aplicadas** (412 pruebas en verde).
 - **Construido:** A4 (borrar mi cuenta): `DELETE /api/mi-cuenta` con confirmación literal, borrado recursivo de Firestore y de la cuenta de Auth, idempotente. Revisión de seguridad **Aprobada con observaciones** (riesgo aceptado en ADR-0010).
 - **Construido:** A5 (diagnóstico admin): `GET /api/admin/estado` con claim `admin` verificado y totales agregados; sin datos personales. Revisión de seguridad **Aprobada con observaciones**.
-- **Construido:** A6 (límite de intentos de login): contador por correo+IP (5/15 min) y por IP sola (20/15 min), bloqueo de 15 min, TTL en Firestore y fail-closed. 545 pruebas en verde; `npm run build` incluye login y admin.
-- **Pendiente de commit:** A0–A6 sin commitear en el worktree; la persona decide cuándo fusionar y hacer push.
+- **Construido:** A6 (límite de intentos de login): contador por correo+IP (5/15 min) y por IP sola (20/15 min), bloqueo de 15 min, TTL en Firestore y fail-closed. La suite actual tiene 555 pruebas; `npm run check:full` y `npm run build` pasan.
+- **Versionado:** A0–A6 ya están en `main`; la conexión con Firebase y el despliegue siguen pendientes de verificación.
 - **Specs aprobadas:** A0, A1, A2 y A3 (2026-11-14); A4, A5 y A6 (2026-11-16).
 
 ## Decisiones tomadas
@@ -28,4 +28,6 @@ Lo mantiene el orquestador: se actualiza al cerrar cada feature (spec aprobada �
 - Crear el proyecto de Firebase y llenar `.env` (los agentes no lo leen).
 - Importar el repositorio en Vercel y cargar las variables de producción.
 - Rotar la clave de servicio compartida y no volver a compartirla.
+- Verificar la conexión real de Auth y Firestore en el despliegue; `/api/health` solo comprueba que las variables estén presentes.
+- Configurar la política TTL de Firestore para `intentos_login.expira_en` (ver `docs/handoffs/a6-limite-intentos.md`).
 - Revisar y firmar la bitácora de IA (`ia/bitacora-ia.md`).
