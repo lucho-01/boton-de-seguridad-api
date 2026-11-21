@@ -15,7 +15,7 @@ La feature A0 necesita un framework con el que exponer `GET /api/health` y las r
 - **Entorno:** `app/shared/server/env.ts` es el único lugar que lee `process.env`. Valida con Zod y se memoiza por proceso. `npm run check:env` muestra `presente` / `falta` / `vacía`, nunca valores.
 - **Firebase Admin:** inicialización perezosa en `app/shared/server/firebase.ts`; la verificación de token se expone como puerto `VerificadorDeToken` y se conecta en `app/features/container.ts`.
 - **Tiempo:** reloj inyectado (`now: () => Date`) desde el contenedor.
-- **`GET /api/health`** no verifica token ni toca Firestore; responde `200` con `estado: "sin_entorno"` si falta configuración.
+- **`GET /api/health`** no verifica token ni toca Firestore; identifica el servicio como `boton-de-seguridad-api` y responde `ok: false` si falta configuración.
 
 ## Alternativas consideradas
 

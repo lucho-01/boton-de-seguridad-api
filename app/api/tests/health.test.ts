@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SaludSchema, VERSION_API } from "../../shared/schema";
+import { SaludSchema, SERVICIO_API, VERSION_API } from "../../shared/schema";
 
 /**
  * `GET /api/health` es público: no verifica token ni toca Firestore (A0 §4 R7).
@@ -65,12 +65,12 @@ afterEach(() => {
 });
 
 describe("A0 §8.4 · GET /api/health con entorno completo", () => {
-  it("responde 200 { ok: true, estado: 'listo', version: '0.1.0' }", async () => {
+  it("responde 200 con ok, servicio y version del contrato móvil", async () => {
     stubbearEntornoCompleto();
     const { respuesta, cuerpo } = await llamarSalud();
     expect(respuesta.status).toBe(200);
     expect(cuerpo.ok).toBe(true);
-    expect(cuerpo.estado).toBe("listo");
+    expect(cuerpo.servicio).toBe(SERVICIO_API);
     expect(cuerpo.version).toBe(VERSION_API);
     expect(cuerpo.version).toBe("0.1.0");
   });
@@ -81,17 +81,17 @@ describe("A0 §8.4 · GET /api/health con entorno completo", () => {
     const respuesta = await GET(peticionSalud());
     expect(respuesta.headers.get("content-type") ?? "").toContain("application/json");
     const cuerpo = SaludSchema.parse(await respuesta.json());
-    expect(Object.keys(cuerpo).sort()).toEqual(["estado", "ok", "version"]);
+    expect(Object.keys(cuerpo).sort()).toEqual(["ok", "servicio", "version"]);
   });
 });
 
 describe("A0 §8.5 · GET /api/health sin entorno", () => {
-  it("responde 200 { ok: false, estado: 'sin_entorno' }", async () => {
+  it("responde 200 con ok false y el servicio identificado cuando falta entorno", async () => {
     stubbearEntornoSinConfigurar();
     const { respuesta, cuerpo } = await llamarSalud();
     expect(respuesta.status).toBe(200);
     expect(cuerpo.ok).toBe(false);
-    expect(cuerpo.estado).toBe("sin_entorno");
+    expect(cuerpo.servicio).toBe(SERVICIO_API);
   });
 
   it("la respuesta sin entorno también valida con SaludSchema", async () => {
@@ -144,13 +144,13 @@ describe("corrección seguridad A0 · la salud se calcula en cada llamada (force
     });
     const modulo = await import("../health/route");
     const sinEntorno = SaludSchema.parse(await (await modulo.GET(peticionSalud())).json());
-    expect(sinEntorno.estado).toBe("sin_entorno");
+    expect(sinEntorno.servicio).toBe(SERVICIO_API);
     expect(sinEntorno.ok).toBe(false);
 
     // 2) Cambia el entorno del proceso SIN recargar el módulo.
     stubbearSinRecargar(ENTORNO_COMPLETO);
     const conEntorno = SaludSchema.parse(await (await modulo.GET(peticionSalud())).json());
-    expect(conEntorno.estado).toBe("listo");
+    expect(conEntorno.servicio).toBe(SERVICIO_API);
     expect(conEntorno.ok).toBe(true);
   });
 

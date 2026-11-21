@@ -1,4 +1,4 @@
-import { type Salud, SaludSchema, VERSION_API } from "@/shared/schema";
+import { type Salud, SaludSchema, SERVICIO_API, VERSION_API } from "@/shared/schema";
 import { evaluarEntornoActual } from "@/shared/server/env";
 import { manejar, responderJson } from "@/shared/server/http";
 
@@ -7,7 +7,7 @@ import { manejar, responderJson } from "@/shared/server/http";
  *
  * Público: no verifica token ni toca Firestore, así que responde muy por
  * debajo de 500 ms. Si falta configuración no es un 500 — el proceso está vivo
- * — sino `200 { ok: false, estado: "sin_entorno" }` para que la app lo distinga.
+ * — sino `200` con `ok: false`; `servicio` identifica siempre esta API.
  */
 
 export const runtime = "nodejs";
@@ -17,10 +17,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function estadoDeSalud(entornoCompleto: boolean): Salud {
-  if (entornoCompleto) {
-    return SaludSchema.parse({ ok: true, estado: "listo", version: VERSION_API });
-  }
-  return SaludSchema.parse({ ok: false, estado: "sin_entorno", version: VERSION_API });
+  return SaludSchema.parse({
+    ok: entornoCompleto,
+    servicio: SERVICIO_API,
+    version: VERSION_API,
+  });
 }
 
 export const GET = manejar(function salud(): Response {

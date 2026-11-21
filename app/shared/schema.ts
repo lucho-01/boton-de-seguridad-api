@@ -156,14 +156,13 @@ export function RespuestaPaginaSchema<Esquema extends z.ZodType>(item: Esquema) 
 /** Versión que reporta la API (leída del `package.json`). No lleva datos personales. */
 export const VERSION_API = "0.1.0";
 
-/** Estado de `GET /api/health`. */
-export const EstadoSaludSchema = z.enum(["listo", "sin_entorno"]);
-export type EstadoSalud = z.infer<typeof EstadoSaludSchema>;
+/** Identificador estable del servicio que responde en `GET /api/health`. */
+export const SERVICIO_API = "boton-de-seguridad-api";
 
 /** Cuerpo de `GET /api/health`. */
 export const SaludSchema = z.object({
   ok: z.boolean(),
-  estado: EstadoSaludSchema,
+  servicio: z.literal(SERVICIO_API),
   version: z.string(),
 });
 export type Salud = z.infer<typeof SaludSchema>;

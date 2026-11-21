@@ -19,7 +19,7 @@
 - `npm run check` → formato, lint, tipos y 111 pruebas en verde.
 - `npm run build` → compila; `/api/health` queda como ruta dinámica.
 - `npm run check:env` → tabla `VARIABLE · estado` sin valores; exit 1 si falta alguna obligatoria.
-- `GET /api/health` → `200 { ok: true, estado: "listo", version: "0.1.0" }` con entorno completo; `estado: "sin_entorno"` sin él.
+- `GET /api/health` → `200 { ok: true, servicio: "boton-de-seguridad-api", version: "0.1.0" }` con entorno completo; `ok: false` con el mismo identificador si falta entorno.
 
 **Decisiones**
 - `health` responde 200 con `ok:false` cuando falta entorno (decidido por la persona): la app distingue sin tratar el servidor como caído.

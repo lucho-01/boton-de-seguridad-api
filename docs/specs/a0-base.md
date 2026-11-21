@@ -29,7 +29,7 @@ Dejar la base compartida de la API para que A1–A6 solo escriban reglas de nego
 
 | Método y ruta | Entrada (campos y tipos) | Respuesta feliz | Errores |
 | --- | --- | --- | --- |
-| `GET /api/health` | ninguna; no requiere token | `200 { "ok": true, "estado": "listo", "version": "0.1.0" }` | `200 { "ok": false, "estado": "sin_entorno" }` si falta configuración (no es 500: el proceso está vivo). La ruta es dinámica (`force-dynamic`): nunca se cachea en el build |
+| `GET /api/health` | ninguna; no requiere token | `200 { "ok": true, "servicio": "boton-de-seguridad-api", "version": "0.1.0" }` | `200 { "ok": false, "servicio": "boton-de-seguridad-api", "version": "0.1.0" }` si falta configuración (no es 500: el proceso está vivo). La ruta es dinámica (`force-dynamic`): nunca se cachea en el build |
 | Cualquier ruta privada (base) | `Authorization: Bearer <id token>` | — | `401` sin cabecera, formato inválido, token vencido o inválido |
 | Cualquier ruta (base) | — | — | `400` Zod (`detalles: [{ campo, mensaje }]`), `415` si el cuerpo no es JSON, `404` ruta inexistente, `405` método no permitido, `500 { "error": "Error interno" }` |
 
@@ -91,8 +91,8 @@ Tabla de traducción (fija el contrato para A1–A6):
 1. Dado un error `NoEncontrado("Contacto no existe")` cuando se responde, entonces `404 { "error": "Contacto no existe" }`.
 2. Dado un error desconocido cuando se responde, entonces `500 { "error": "Error interno" }` y el log no contiene el mensaje original ni datos personales.
 3. Dado un `ZodError` en un campo `telefono`, cuando se valida, entonces `400` con `detalles[0].campo = "telefono"`.
-4. Dado `GET /api/health` sin token y con entorno completo, entonces `200 { ok: true, estado: "listo" }`.
-5. Dado `GET /api/health` sin entorno, entonces `200 { ok: false, estado: "sin_entorno" }`.
+4. Dado `GET /api/health` sin token y con entorno completo, entonces `200 { ok: true, servicio: "boton-de-seguridad-api", version: "0.1.0" }`.
+5. Dado `GET /api/health` sin entorno, entonces `200 { ok: false, servicio: "boton-de-seguridad-api", version: "0.1.0" }`.
 6. Dado una ruta privada sin `Authorization`, cuando se llama, entonces `401 "Falta la sesión"`.
 7. Dado `Authorization: Basic x`, cuando se llama, entonces `401`.
 8. Dado un token vencido o inválido, cuando se verifica con un verificador simulado, entonces `401 "Sesión inválida o vencida"`.
